@@ -1,11 +1,15 @@
+# Super multi-stage GO image build:
+
 ARG BASE_IMAGE=gcr.io/distroless/base
 
+# -------------------------------------------------#
 FROM $BASE_IMAGE:debug as os_config_image
 
 ARG BASE_IMAGE
 
 RUN ["adduser","-h","/","-s","/sbin/nologin","-D","-H","app_user"]
 
+# -------------------------------------------------#
 FROM golang:1.12-stretch as build_image
 
 ARG BASE_IMAGE
@@ -18,13 +22,14 @@ RUN go get -d -v ./...
 
 RUN go install -v ./...
 
+# -------------------------------------------------#
 FROM $BASE_IMAGE as service_image
 
 ARG BASE_IMAGE
 
 LABEL base_image=$BASE_IMAGE
 
-LABEL owner_team=OPS
+## LABEL owner_team=YOUR_TEAM_NAME
 
 COPY --from=os_config_image --chown=root:root /etc/passwd /etc/group /etc/
 
