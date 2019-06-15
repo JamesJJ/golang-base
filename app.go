@@ -8,7 +8,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -32,7 +31,7 @@ func init() {
 func main() {
 
 	// Setup Logging To StdOut
-	LogInit()
+	logInit()
 
 	// Handle ^C and SIGTERM gracefully
 	var gracefulStop = make(chan os.Signal)
@@ -45,11 +44,7 @@ func main() {
 	}()
 
 	// Prepare to handle /health requests to HTTP server
-	http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		versionMap := map[string]string{"time_now": time.Now().UTC().Format(time.UnixDate)}
-		versionJSON, _ := json.Marshal(versionMap)
-		fmt.Fprintf(w, string(versionJSON))
-	})
+	http.HandleFunc("/health", HealthCheckHandler)
 
 	// Start HTTP server listener
 	bindAddress := ":9999"
@@ -63,7 +58,7 @@ func main() {
 
 }
 
-func LogInit() {
+func logInit() {
 
 	errorHandle := os.Stderr
 	infoHandle := os.Stdout
@@ -89,4 +84,16 @@ func LogInit() {
 	// Verbose logging really is enabled!
 	Debug.Printf("Verbose logging enabled")
 
+}
+
+func HealthCheckHandler(w http.ResponseWriter, r *http.Request) {
+	statusMap := map[string]string{"status": "ok"}
+	status, err := json.Marshal(statusMap)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	w.Write(status)
 }
